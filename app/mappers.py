@@ -1,5 +1,6 @@
 from app.models import Clinic, Service
 from app.schemas import ClinicCreate, ServiceCreate
+from datetime import datetime
 
 def clinic_create_to_model(clinic: ClinicCreate) -> Clinic:
     db_clinic = Clinic(
@@ -12,7 +13,8 @@ def clinic_create_to_model(clinic: ClinicCreate) -> Clinic:
         country=clinic.country,
         zip_code=clinic.zip_code,
         latitude=clinic.latitude,
-        longitude=clinic.longitude
+        longitude=clinic.longitude,
+        date_created=datetime.utcnow()
     )
     db_clinic.services = [service_create_to_model(s) for s in clinic.services]
     return db_clinic

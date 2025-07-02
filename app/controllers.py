@@ -1,21 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException
 from typing import List
-from app import schemas, crud, database
+from app import schemas, crud
 
 clinic_router = APIRouter()
 
-def get_db():
-    db = database.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+@clinic_router.post("/", response_model=dict)
+async def create_clinic(clinic: schemas.ClinicCreate):
+    return await crud.create_clinic(clinic)
 
-@clinic_router.post("/", response_model=schemas.Clinic)
-def create_clinic(clinic: schemas.ClinicCreate, db: Session = Depends(get_db)):
-    return crud.create_clinic(db, clinic)
-
-@clinic_router.get("/", response_model=List[schemas.Clinic])
-def read_clinics(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    return crud.get_clinics(db, skip=skip, limit=limit) 
+@clinic_router.get("/", response_model=List[dict])
+async def read_clinics(skip: int = 0, limit: int = 10):
+    return await crud.get_clinics(skip=skip, limit=limit) 

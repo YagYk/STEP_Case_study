@@ -6,4 +6,6 @@ app = FastAPI()
 
 app.include_router(clinic_router, prefix="/clinics", tags=["Clinics"])
 
-init_db() 
+@app.on_event("startup")
+async def startup_event():
+    init_db() 

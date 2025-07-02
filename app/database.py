@@ -1,13 +1,24 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from app.models import Base
+from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import MongoClient
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./clinics.db"
+# MongoDB connection string - you can change this to your MongoDB instance
+MONGODB_URL = "mongodb://localhost:27017/"
+DATABASE_NAME = "cmd_telehealth"
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Async client for FastAPI
+async_client = AsyncIOMotorClient(MONGODB_URL)
+database = async_client[DATABASE_NAME]
+
+# Collections
+clinics_collection = database.clinics
+services_collection = database.services
+
+# Sync client for initialization (if needed)
+sync_client = MongoClient(MONGODB_URL)
+sync_database = sync_client[DATABASE_NAME]
 
 def init_db():
-    Base.metadata.create_all(bind=engine) 
+    """Initialize database indexes"""
+    # Create indexes for better performance
+    clinics_collection.create_index("clinic_id", unique=True)
+    services_collection.create_index("service_id") 

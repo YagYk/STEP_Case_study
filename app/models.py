@@ -1,33 +1,53 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean
-from sqlalchemy.orm import relationship, declarative_base
+from pydantic import BaseModel, Field
+from typing import List, Optional
 from datetime import datetime
+from bson import ObjectId
 
-Base = declarative_base()
+class PyObjectId(ObjectId):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
 
-class Clinic(Base):
-    __tablename__ = "clinics"
-    id = Column(Integer, primary_key=True, index=True)
-    clinic_id = Column(String, unique=True, index=True)
-    clinic_name = Column(String)
-    business_name = Column(String)
-    street_address = Column(String)
-    city = Column(String)
-    state = Column(String)
-    country = Column(String)
-    zip_code = Column(String)
-    latitude = Column(Float)
-    longitude = Column(Float)
-    date_created = Column(DateTime, default=datetime.utcnow)
-    services = relationship("Service", back_populates="clinic")
+    @classmethod
+    def validate(cls, v):
+        if not ObjectId.is_valid(v):
+            raise ValueError("Invalid ObjectId")
+        return ObjectId(v)
 
-class Service(Base):
-    __tablename__ = "services"
-    id = Column(Integer, primary_key=True, index=True)
-    service_id = Column(String)
-    service_name = Column(String)
-    service_code = Column(String)
-    service_description = Column(String)
-    average_price = Column(Float)
-    is_active = Column(Boolean, default=True)
-    clinic_id = Column(Integer, ForeignKey("clinics.id"))
-    clinic = relationship("Clinic", back_populates="services") 
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        field_schema.update(type="string")
+
+class Service(BaseModel):
+    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    service_id: str
+    service_name: str
+    service_code: str
+    service_description: Optional[str] = None
+    average_price: Optional[float] = None
+    is_active: Optional[bool] = True
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+class Clinic(BaseModel):
+    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    clinic_id: str
+    clinic_name: str
+    business_name: str
+    street_address: str
+    city: str
+    state: str
+    country: str
+    zip_code: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    date_created: Optional[datetime] = None
+    services: List[Service] = []
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str} 

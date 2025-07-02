@@ -1,12 +1,14 @@
-from sqlalchemy.orm import Session
-from app import models, schemas, mappers
+from app import models, schemas, mappers, database
+from datetime import datetime
 
-def create_clinic(db: Session, clinic: schemas.ClinicCreate):
+async def create_clinic(clinic: schemas.ClinicCreate):
     db_clinic = mappers.clinic_create_to_model(clinic)
-    db.add(db_clinic)
-    db.commit()
-    db.refresh(db_clinic)
-    return db_clinic
+    clinic_dict = db_clinic.dict(by_alias=True)
+    result = await database.clinics_collection.insert_one(clinic_dict)
+    clinic_dict["_id"] = result.inserted_id
+    return clinic_dict
 
-def get_clinics(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(models.Clinic).offset(skip).limit(limit).all() 
+async def get_clinics(skip: int = 0, limit: int = 10):
+    cursor = database.clinics_collection.find().skip(skip).limit(limit)
+    clinics = await cursor.to_list(length=limit)
+    return clinics 
